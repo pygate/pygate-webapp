@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+  <div class="row">
+
+    <div class="col">
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action = "{{ url_for('upload') }}" method = "POST" enctype = "multipart/form-data">
+      <div class="input-group mb-3">
+        <div class="custom-file">
+          <input type="file" class="custom-file-input" name="uploadfile">
+          <label class="custom-file-label" for="uploadfile" aria-describedby="inputGroupFileAddon02" >Choose file to add to Filecoin storage</label>
+        </div>
+        <div class="input-group-append">
+          <input type="submit" class="input-group-text" id="inputGroupFileAddon02" value="Upload" />
+        </div>
+      </div>
+      </form>
+
+    <!-- end column -->
+    </div>
+
+
+    <div class="col">
+    <!-- end column -->
+    </div>
+
+  <!-- end row -->
+  </div>
+
+<!-- end container -->
+</div>
+
+<script>
+// Add the following code if you want the name of the file appear on select
+$(".custom-file-input").on("change", function() {
+  var fileName = $(this).val().split("\\").pop();
+  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+});
+</script>
+
+
+{% endblock %}
