@@ -1,5 +1,5 @@
-# pygate-flask
-A Filecoin Flask template app for Python developers
+# pygate-webapp
+A Filecoin Flask template application for Python developers
 
 # Installation
 * Clone files and cd to directory:  
