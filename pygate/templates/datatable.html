@@ -1,0 +1,17 @@
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dataTables.bootstrap4.min.css') }}">
+
+    <script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+    <script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/dataTables.bootstrap4.min.js') }}"></script>
+
+
+    <script type="text/javascript" class="init">
+        $(document).ready(function() {
+            $('#files').DataTable( {
+                "lengthMenu": [[10, 30, 60, -1], [10, 30, 60, "All"]],
+                "pageLength": 10,
+                "pagingType": "full_numbers",
+                "order": [[ 2, "desc" ]]
+            } );
+        } );
+    </script>

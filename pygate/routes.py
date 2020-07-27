@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks
 from pygate import app, db
-from pygate.models import Uploads, Ffs
+from pygate.models import Files, Ffs
 
 
 @app.route("/", methods=["GET"])
@@ -23,6 +23,7 @@ def files():
 
     # Uploading a new file
     if request.method == "POST":
+
         # Use the default upload directory configured for the app
         upload_path = app.config["UPLOADDIR"]
         if not os.path.exists(upload_path):
@@ -31,10 +32,16 @@ def files():
         upload = request.files["uploadfile"]
         file_name = secure_filename(upload.filename)
 
-        """TODO: ENCRYPT FILE"""
+        try:
+            # Save the uploaded file
+            upload.save(os.path.join(upload_path, file_name))
+        except:
+            # Respond if the user did not provide a file to upload
+            stored_files = Files.query.all()
+            flash("Please choose a file to upload to Filecoin")
+            return render_template("files.html", stored_files=stored_files)
 
-        # Save the uploaded file
-        upload.save(os.path.join(upload_path, file_name))
+        """TODO: ENCRYPT FILE"""
 
         # Push file to Filecoin via Powergate
         powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
@@ -52,6 +59,7 @@ def files():
             )
             db.session.add(filecoin_file_system)
             db.session.commit()
+            ffs = Ffs.query.filter_by(default=True).first()
 
         try:
             # Create an iterator of the uploaded file using the helper function
@@ -72,22 +80,26 @@ def files():
             """TODO: DELETE CACHED COPY OF FILE? """
 
             # Save file information to database
-            file_upload = Uploads(
+            file_upload = Files(
                 file_path=upload_path,
                 file_name=file_name,
                 upload_date=upload_date,
                 file_size=file_size,
                 CID=file_hash.cid,
+                ffs_id=ffs.id,
             )
             db.session.add(file_upload)
             db.session.commit()
 
-            flash("'{}' uploaded to Filecoin. CID: {}".format(file_name, file_hash.cid))
+            flash("'{}' uploaded to Filecoin.".format(file_name))
 
         except Exception as e:
+            # Output error message if pushing to Filecoin fails
             flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
 
-    return render_template("files.html")
+    stored_files = Files.query.all()
+
+    return render_template("files.html", stored_files=stored_files)
 
 
 @app.route("/wallets", methods=["GET"])
