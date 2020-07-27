@@ -7,14 +7,19 @@ from datetime import datetime
 from flask import render_template, flash, request
 from werkzeug.utils import secure_filename
 from pygate_grpc.client import PowerGateClient
+from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks
 from pygate import app, db
 from pygate.models import Uploads, Ffs
 
 
 @app.route("/", methods=["GET"])
-@app.route("/upload", methods=["GET", "POST"])
-def upload():
-    """Upload a new file to add to Filecoin via Powergate FFS"""
+@app.route("/files", methods=["GET", "POST"])
+def files():
+    """
+    Upload a new file to add to Filecoin via Powergate FFS and
+    list files previously added. Allow users to download files from
+    Filecoin via this list.
+    """
 
     # Uploading a new file
     if request.method == "POST":
@@ -48,44 +53,41 @@ def upload():
             db.session.add(filecoin_file_system)
             db.session.commit()
 
-        # Create an iterator of the uploaded file using the helper function
-        file_iterator = powergate.ffs.get_file_bytes(
-            os.path.join(upload_path, file_name)
-        )
-        # Convert the iterator into request and then add to the hot set (IPFS)
-        file_hash = powergate.ffs.add_to_hot(
-            powergate.ffs.bytes_to_chunks(file_iterator), ffs.token
-        )
-        # Push the file to Filecoin
-        powergate.ffs.push(file_hash.cid, ffs.token)
-        # Check that CID is pinned to FFS
-        check = powergate.ffs.info(file_hash.cid, ffs.token)
+        try:
+            # Create an iterator of the uploaded file using the helper function
+            file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
+            # Convert the iterator into request and then add to the hot set (IPFS)
+            file_hash = powergate.ffs.add_to_hot(
+                bytes_to_chunks(file_iterator), ffs.token
+            )
+            # Push the file to Filecoin
+            powergate.ffs.push(file_hash.cid, ffs.token)
+            # Check that CID is pinned to FFS
+            check = powergate.ffs.info(file_hash.cid, ffs.token)
 
-        # Note the upload date and file size
-        upload_date = datetime.now().replace(microsecond=0)
-        file_size = os.path.getsize(os.path.join(upload_path, file_name))
+            # Note the upload date and file size
+            upload_date = datetime.now().replace(microsecond=0)
+            file_size = os.path.getsize(os.path.join(upload_path, file_name))
 
-        """TODO: DELETE CACHED COPY OF FILE? """
+            """TODO: DELETE CACHED COPY OF FILE? """
 
-        # Save file information to database
-        file_upload = Uploads(
-            file_path=upload_path,
-            file_name=file_name,
-            upload_date=upload_date,
-            file_size=file_size,
-            CID=file_hash.cid,
-        )
-        db.session.add(file_upload)
-        db.session.commit()
+            # Save file information to database
+            file_upload = Uploads(
+                file_path=upload_path,
+                file_name=file_name,
+                upload_date=upload_date,
+                file_size=file_size,
+                CID=file_hash.cid,
+            )
+            db.session.add(file_upload)
+            db.session.commit()
 
-        flash("'{}' uploaded to Filecoin. CID: {}".format(file_name, file_hash.cid))
+            flash("'{}' uploaded to Filecoin. CID: {}".format(file_name, file_hash.cid))
 
-    return render_template("upload.html")
+        except Exception as e:
+            flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
 
-
-@app.route("/storage", methods=["GET"])
-def storage():
-    return render_template("storage.html")
+    return render_template("files.html")
 
 
 @app.route("/wallets", methods=["GET"])
