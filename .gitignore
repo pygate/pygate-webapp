@@ -3,5 +3,5 @@ uploads/
 venv/
 __pycache__/
 pygate/__pycache__/
-pygate/__init__pyc
+pygate/__init__.pyc
 .DS_Store
