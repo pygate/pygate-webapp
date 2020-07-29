@@ -60,7 +60,7 @@
             <td>{{ file.file_name }}</td>
             <td>{{ file.file_size|filesizeformat(true) }} </td>
             <td>{{ file.upload_date }}</td>
-            <td>{{ file.CID }}</td>
+            <td><a href="{{ url_for('download', cid=file.CID) }}">{{ file.CID }}</a></td>
             <td>{{ file.Ffs }}</td>
           </tr>
         {% endfor %}

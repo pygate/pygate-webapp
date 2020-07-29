@@ -3,11 +3,14 @@ Define the web application's relative routes and the business logic for each
 """
 
 import os
+import sys
+from pathlib import Path
+from io import BytesIO
 from datetime import datetime
-from flask import render_template, flash, request
+from flask import render_template, flash, request, send_file
 from werkzeug.utils import secure_filename
 from pygate_grpc.client import PowerGateClient
-from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks
+from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
 from pygate.models import Files, Ffs
 
@@ -96,6 +99,61 @@ def files():
         except Exception as e:
             # Output error message if pushing to Filecoin fails
             flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
+
+            """TODO: RESPOND TO SPECIFIC STATUS CODE DETAILS
+            (how to isolate these? e.g. 'status_code.details = ...')"""
+
+    stored_files = Files.query.all()
+
+    return render_template("files.html", stored_files=stored_files)
+
+
+@app.route("/download/<cid>", methods=["GET"])
+def download(cid):
+    # Retrieve File and FFS info using the CID
+    file = Files.query.filter_by(CID=cid).first()
+    ffs = Ffs.query.get(file.ffs_id)
+
+    try:
+        # Retrieve data from Filecoin
+        powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+        data = powergate.ffs.get(file.CID, ffs.token)
+
+        # Save the downloaded data as a file
+        # Use the default download directory configured for the app
+        download_path = app.config["DOWNLOADDIR"]
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+
+        sys.stdout.buffer.write(next(data))
+
+        """
+        print(next(data)) <-- shows data in bytes format
+        type(next(data))  <-- confirms it's 'byte' type
+        """
+
+        """ DOESN'T WORK:
+        open(file.file_name, "wb").write(next(data))
+        """
+
+        """ ALSO DOESN'T WORK:
+        bytesio_object = BytesIO(next(data))
+
+        with open(os.path.join(download_path, file.file_name), "wb") as out_file:
+            out_file.write(bytesio_object.read())
+            # ALSO DOESN'T WORK: out_file.write(bytesio_object.get_buffer())
+            out_file.close()
+        """
+
+        """ ALSO DOESN'T WORK:
+        Path(os.path.join(download_path, file.file_name)).write_bytes(
+            bytesio_object.getbuffer()
+        )
+        """
+
+    except Exception as e:
+        # Output error message if download from Filecoin fails
+        flash("failed to download '{}' from Filecoin. {}".format(file.file_name, e))
 
     stored_files = Files.query.all()
 
