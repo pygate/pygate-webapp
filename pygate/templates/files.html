@@ -57,10 +57,10 @@
       {% if stored_files %}
         {% for file in stored_files %}
           <tr>
-            <td>{{ file.file_name }}</td>
+            <td><a href="{{ url_for('download', cid=file.CID) }}">{{ file.file_name }}</a></td>
             <td>{{ file.file_size|filesizeformat(true) }} </td>
             <td>{{ file.upload_date }}</td>
-            <td><a href="{{ url_for('download', cid=file.CID) }}">{{ file.CID }}</a></td>
+            <td>{{ file.CID }}</td>
             <td>{{ file.Ffs }}</td>
           </tr>
         {% endfor %}

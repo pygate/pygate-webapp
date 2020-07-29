@@ -4,12 +4,18 @@ Define the web application's relative routes and the business logic for each
 
 import os
 from datetime import datetime
-from flask import render_template, flash, request, send_file
+from flask import (
+    render_template,
+    flash,
+    request,
+    send_file,
+    safe_join,
+)
 from werkzeug.utils import secure_filename
 from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
-from pygate.models import Files, Ffs
+from pygate.models import Files, Ffs, Logs
 
 
 @app.route("/", methods=["GET"])
@@ -77,7 +83,7 @@ def files():
             upload_date = datetime.now().replace(microsecond=0)
             file_size = os.path.getsize(os.path.join(upload_path, file_name))
 
-            """TODO: DELETE CACHED COPY OF FILE? """
+            """TODO: DELETE CACHED COPIES OF FILE UPLOADS """
 
             # Save file information to database
             file_upload = Files(
@@ -88,7 +94,18 @@ def files():
                 CID=file_hash.cid,
                 ffs_id=ffs.id,
             )
+
+            # Update log table
+            event = Logs(
+                timestamp=upload_date,
+                event="Uploaded "
+                + file_name
+                + " (CID: "
+                + file_hash.cid
+                + ") to Filecoin.",
+            )
             db.session.add(file_upload)
+            db.session.add(event)
             db.session.commit()
 
             flash("'{}' uploaded to Filecoin.".format(file_name))
@@ -123,17 +140,36 @@ def download(cid):
             os.makedirs(download_path)
 
         with open(os.path.join(download_path, file.file_name), "wb") as out_file:
-            # Iterate over the data byte chuncks and save them to an output file
+            # Iterate over the data byte chunks and save them to an output file
             for data in data_:
                 out_file.write(data)
+
+        # Create path to download file
+        safe_path = safe_join("../" + app.config["DOWNLOADDIR"], file.file_name)
+
+        # Update log table
+        event = Logs(
+            timestamp=datetime.now().replace(microsecond=0),
+            event="Downloaded "
+            + file.file_name
+            + " (CID: "
+            + file.CID
+            + ") from Filecoin.",
+        )
+        db.session.add(event)
+        db.session.commit()
+
+        # Offer the file for download to local machine
+        return send_file(safe_path, as_attachment=True)
+        """TODO: CLEAR CACHED FILES IN DOWNLOAD DIRECTORY"""
 
     except Exception as e:
         # Output error message if download from Filecoin fails
         flash("failed to download '{}' from Filecoin. {}".format(file.file_name, e))
 
-    stored_files = Files.query.all()
+        stored_files = Files.query.all()
 
-    return render_template("files.html", stored_files=stored_files)
+        return render_template("files.html", stored_files=stored_files)
 
 
 @app.route("/wallets", methods=["GET"])
@@ -143,7 +179,9 @@ def wallets():
 
 @app.route("/logs", methods=["GET"])
 def logs():
-    return render_template("logs.html")
+
+    logs = Logs.query.all()
+    return render_template("logs.html", logs=logs)
 
 
 @app.route("/settings", methods=["GET"])

@@ -13,5 +13,11 @@
                 "pagingType": "full_numbers",
                 "order": [[ 2, "desc" ]]
             } );
+            $('#logs').DataTable( {
+                "lengthMenu": [[10, 30, 60, -1], [10, 30, 60, "All"]],
+                "pageLength": 10,
+                "pagingType": "full_numbers",
+                "order": [[ 0, "desc" ]]
+            } );
         } );
     </script>

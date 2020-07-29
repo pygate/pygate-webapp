@@ -1,5 +1,6 @@
 pygate.db
 uploads/
+downloads/
 venv/
 __pycache__/
 pygate/__pycache__/

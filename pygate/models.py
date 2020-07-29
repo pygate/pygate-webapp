@@ -50,3 +50,20 @@ class Files(db.Model):
 
     def __repr__(self):
         return self.file_name
+
+
+class Logs(db.Model):
+    """
+    Define the attributes for log entries
+    """
+
+    id = db.Column(db.Integer(), primary_key=True)
+    timestamp = db.Column(db.DateTime())
+    event = db.Column(db.String(255))
+
+    def __init__(self, timestamp, event):
+        self.timestamp = timestamp
+        self.event = event
+
+    def __repr__(self):
+        return self.event

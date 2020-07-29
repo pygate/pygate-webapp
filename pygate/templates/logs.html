@@ -2,6 +2,34 @@
 
 {% block content %}
 
-Coming soon.
+<div class="container-fluid">
+
+<div class="row" style="margin-top: 50px;">
+  <div class="col">
+
+  <table id="logs" class="table table-striped table-bordered">
+    <thead>
+    <tr>
+    <th style="width:20%;"><strong>Timestamp</strong></th>
+    <th><strong>Event</strong></th>
+    </tr>
+    </thead>
+    {% if logs %}
+      {% for log in logs %}
+        <tr>
+          <td>{{ log.timestamp }}</td>
+          <td>{{ log.event }}</td>
+        </tr>
+      {% endfor %}
+    {% endif %}
+  </table>
+
+<!-- end column -->
+</div>
+<!-- end row -->
+</div>
+
+<!-- end container -->
+</div>
 
 {% endblock %}
