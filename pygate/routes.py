@@ -125,8 +125,6 @@ def download(cid):
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
-        sys.stdout.buffer.write(next(data))
-
         """
         print(next(data)) <-- shows data in bytes format
         type(next(data))  <-- confirms it's 'byte' type
