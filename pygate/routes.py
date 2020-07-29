@@ -3,9 +3,6 @@ Define the web application's relative routes and the business logic for each
 """
 
 import os
-import sys
-from pathlib import Path
-from io import BytesIO
 from datetime import datetime
 from flask import render_template, flash, request, send_file
 from werkzeug.utils import secure_filename
@@ -117,7 +114,7 @@ def download(cid):
     try:
         # Retrieve data from Filecoin
         powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-        data = powergate.ffs.get(file.CID, ffs.token)
+        data_ = powergate.ffs.get(file.CID, ffs.token)
 
         # Save the downloaded data as a file
         # Use the default download directory configured for the app
@@ -125,29 +122,10 @@ def download(cid):
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
-        """
-        print(next(data)) <-- shows data in bytes format
-        type(next(data))  <-- confirms it's 'byte' type
-        """
-
-        """ DOESN'T WORK:
-        open(file.file_name, "wb").write(next(data))
-        """
-
-        """ ALSO DOESN'T WORK:
-        bytesio_object = BytesIO(next(data))
-
         with open(os.path.join(download_path, file.file_name), "wb") as out_file:
-            out_file.write(bytesio_object.read())
-            # ALSO DOESN'T WORK: out_file.write(bytesio_object.get_buffer())
-            out_file.close()
-        """
-
-        """ ALSO DOESN'T WORK:
-        Path(os.path.join(download_path, file.file_name)).write_bytes(
-            bytesio_object.getbuffer()
-        )
-        """
+            # Iterate over the data byte chuncks and save them to an output file
+            for data in data_:
+                out_file.write(data)
 
     except Exception as e:
         # Output error message if download from Filecoin fails
