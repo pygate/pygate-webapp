@@ -216,8 +216,29 @@ def download(cid):
 
 @app.route("/wallets", methods=["GET"])
 def wallets():
+    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
 
-    return render_template("wallets.html")
+    ffses = Ffs.query.all()
+    wallets = []
+
+    for filecoin_filesystem in ffses:
+        addresses = powergate.ffs.addrs_list(filecoin_filesystem.token)
+        addresses_dict = MessageToDict(addresses)
+
+        for address in addresses_dict["addrs"]:
+            # TODO: FIX ME https://github.com/pygate/pygate-gRPC/issues/27
+            # balance = powergate.wallet.balance(address["addr"])
+            wallets.append(
+                {
+                    "ffs": filecoin_filesystem.ffs_id,
+                    "name": address["name"],
+                    "address": address["addr"],
+                    "type": address["type"],
+                    "balance": "[fix me]",
+                }
+            )
+
+    return render_template("wallets.html", wallets=wallets)
 
 
 @app.route("/logs", methods=["GET"])

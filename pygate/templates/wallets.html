@@ -2,6 +2,40 @@
 
 {% block content %}
 
-Coming soon.
+<div class="container-fluid">
+
+<div class="row" style="margin-top: 50px;">
+  <div class="col">
+
+  <table id="logs-table" class="table table-striped table-bordered">
+    <thead>
+    <tr>
+    <th><strong>Name</strong></th>
+    <th><strong>Balance</strong></th>
+    <th><strong>Address</strong></th>
+    <th><strong>FFS</strong></th>
+    <th><strong>Type</strong></th>
+    </tr>
+    </thead>
+    {% if wallets %}
+      {% for wallet in wallets %}
+        <tr>
+          <td>{{ wallet["name"] }}</td>
+          <td>{{ wallet["balance"] }}</td>
+          <td>{{ wallet["address"] }}</td>
+          <td>{{ wallet["ffs"] }}</td>
+          <td>{{ wallet["type"] }}</td>
+        </tr>
+      {% endfor %}
+    {% endif %}
+  </table>
+
+<!-- end column -->
+</div>
+<!-- end row -->
+</div>
+
+<!-- end container -->
+</div>
 
 {% endblock %}
