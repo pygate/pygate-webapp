@@ -114,6 +114,14 @@ def files():
             # Output error message if pushing to Filecoin fails
             flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
 
+            # Update log table with error
+            event = Logs(
+                timestamp=datetime.now().replace(microsecond=0),
+                event="Upload ERROR: " + file_name + " " + str(e),
+            )
+            db.session.add(event)
+            db.session.commit()
+
             """TODO: RESPOND TO SPECIFIC STATUS CODE DETAILS
             (how to isolate these? e.g. 'status_code.details = ...')"""
 
@@ -166,6 +174,19 @@ def download(cid):
     except Exception as e:
         # Output error message if download from Filecoin fails
         flash("failed to download '{}' from Filecoin. {}".format(file.file_name, e))
+
+        # Update log table with error
+        event = Logs(
+            timestamp=datetime.now().replace(microsecond=0),
+            event="Download ERROR: "
+            + file.file_name
+            + " CID: "
+            + file.CID
+            + " "
+            + str(e),
+        )
+        db.session.add(event)
+        db.session.commit()
 
         stored_files = Files.query.all()
 
