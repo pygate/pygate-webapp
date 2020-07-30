@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/jquery-ui.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
@@ -16,20 +17,20 @@
 
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Pygate</a>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <a class="navbar-brand" href="/"><img src={{ url_for('static', filename='pygate-logo2.png') }} /></a>
     <div class="navbar-collapse" id="navbarNavDropdown">
       <ul class="navbar-nav">
-        <li class="nav-item">
+        <li class="nav-item" id="files">
           <a class="nav-link" href="{{ url_for('files') }}">Files</a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" id="wallets">
           <a class="nav-link" href="{{ url_for('wallets') }}">Wallets</a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" id="logs">
           <a class="nav-link" href="{{ url_for('logs') }}">Logs</a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" id="settings">
           <a class="nav-link" href="{{ url_for('settings') }}">Settings</a>
         </li>
       </ul>
@@ -43,4 +44,12 @@
 {% endblock %}
 
 </div>
+
+<script>
+// set active menu item
+$(document).ready(function () {
+  $("#{{request.endpoint}}").addClass("active");
+ })
+</script>
+
 </body>

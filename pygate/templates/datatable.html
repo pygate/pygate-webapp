@@ -7,13 +7,13 @@
 
     <script type="text/javascript" class="init">
         $(document).ready(function() {
-            $('#files').DataTable( {
+            $('#files-table').DataTable( {
                 "lengthMenu": [[10, 30, 60, -1], [10, 30, 60, "All"]],
                 "pageLength": 10,
                 "pagingType": "full_numbers",
                 "order": [[ 2, "desc" ]]
             } );
-            $('#logs').DataTable( {
+            $('#logs-table').DataTable( {
                 "lengthMenu": [[10, 30, 60, -1], [10, 30, 60, "All"]],
                 "pageLength": 10,
                 "pagingType": "full_numbers",

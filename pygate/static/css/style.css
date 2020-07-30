@@ -1,0 +1,16 @@
+.navbar{
+  background-color: #000;
+}
+
+.navbar-brand {
+    margin-right: 50px;
+}
+
+.navbar-brand img{
+  height: 30px;
+  width: auto;
+}
+
+.nav-item {
+  margin: 0 10px;
+}
