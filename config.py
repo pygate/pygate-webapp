@@ -5,8 +5,8 @@ Global settings for Pygate application
 import os
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
-UPLOADDIR = "uploads/"
-DOWNLOADDIR = "downloads/"
+UPLOADDIR = "_uploads/"
+DOWNLOADDIR = "_downloads/"
 POWERGATE_ADDRESS = "127.0.0.1:5002"
 
 # change to os.environ settings in production
