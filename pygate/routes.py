@@ -12,6 +12,8 @@ from flask import (
     safe_join,
 )
 from werkzeug.utils import secure_filename
+from sqlalchemy import desc
+from google.protobuf.json_format import MessageToDict
 from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
@@ -63,6 +65,25 @@ def files():
                 creation_date=creation_date,
                 default=True,
             )
+
+            # Record new FFS creation in log table
+            event = Logs(
+                timestamp=creation_date,
+                event="Created new Filecoin FileSystem (FFS): " + ffs.id,
+            )
+            db.session.add(event)
+            db.session.commit()
+
+            address = powergate.ffs.addrs_list(ffs.token)
+            obj = MessageToDict(address)
+            wallet = obj["addrs"][0]["addr"]
+
+            # Record new Wallet creation in log table
+            event = Logs(
+                timestamp=creation_date, event="Created new Wallet: " + wallet,
+            )
+            db.session.add(event)
+
             db.session.add(filecoin_file_system)
             db.session.commit()
             ffs = Ffs.query.filter_by(default=True).first()
@@ -95,7 +116,7 @@ def files():
                 ffs_id=ffs.id,
             )
 
-            # Update log table
+            # Record upload in log table
             event = Logs(
                 timestamp=upload_date,
                 event="Uploaded "
@@ -195,6 +216,7 @@ def download(cid):
 
 @app.route("/wallets", methods=["GET"])
 def wallets():
+
     return render_template("wallets.html")
 
 
