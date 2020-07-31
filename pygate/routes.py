@@ -153,6 +153,11 @@ def files():
 
 @app.route("/download/<cid>", methods=["GET"])
 def download(cid):
+    """
+    Retrieve a file from Filecoin via IPFS using Powergate and offer the user
+    the option to save it to their machine.
+    """
+
     # Retrieve File and FFS info using the CID
     file = Files.query.filter_by(CID=cid).first()
     ffs = Ffs.query.get(file.ffs_id)
@@ -176,7 +181,7 @@ def download(cid):
         # Create path to download file
         safe_path = safe_join("../" + app.config["DOWNLOADDIR"], file.file_name)
 
-        # Update log table
+        # Update log table with download information
         event = Logs(
             timestamp=datetime.now().replace(microsecond=0),
             event="Downloaded "
@@ -216,6 +221,11 @@ def download(cid):
 
 @app.route("/wallets", methods=["GET"])
 def wallets():
+    """
+    Retrieve all wallets from all FFSes and save them in a dictionary for
+    presentation on the UI template
+    """
+
     powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
 
     ffses = Ffs.query.all()
