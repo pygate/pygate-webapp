@@ -97,8 +97,6 @@ def files():
             )
             # Push the file to Filecoin
             powergate.ffs.push(file_hash.cid, ffs.token)
-            # Check that CID is pinned to FFS
-            check = powergate.ffs.info(file_hash.cid, ffs.token)
 
             # Note the upload date and file size
             upload_date = datetime.now().replace(microsecond=0)
@@ -146,6 +144,27 @@ def files():
 
     stored_files = Files.query.all()
 
+    return render_template("files.html", stored_files=stored_files)
+
+
+@app.route("/cid_config/<cid>/<ffs_id>", methods=["GET"])
+def cid_config(cid, ffs_id):
+    """
+    Using its CID, output the FFS config options used to store a file
+    """
+
+    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+
+    ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
+    # Retrieve the CID config from Powergate
+    config = powergate.ffs.default_config_for_cid(cid, ffs.token)
+
+    # Output the info to a flash notification
+    flash(config)
+
+    stored_files = Files.query.all()
+
+    # Return the files template
     return render_template("files.html", stored_files=stored_files)
 
 
