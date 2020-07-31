@@ -129,8 +129,6 @@ def files():
             db.session.add(event)
             db.session.commit()
 
-            flash("'{}' uploaded to Filecoin.".format(file_name))
-
         except Exception as e:
             # Output error message if pushing to Filecoin fails
             flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
