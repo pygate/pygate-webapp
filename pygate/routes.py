@@ -222,7 +222,7 @@ def download(cid):
 @app.route("/wallets", methods=["GET"])
 def wallets():
     """
-    Retrieve all wallets from all FFSes and save them in a dictionary for
+    Retrieve all wallets from all FFSes and save them in a list for
     presentation on the UI template
     """
 
