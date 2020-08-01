@@ -3,21 +3,24 @@ Define the web application's relative routes and the business logic for each
 """
 
 import os
+import json
 from datetime import datetime
 from flask import (
     render_template,
+    redirect,
     flash,
     request,
     send_file,
     safe_join,
 )
 from werkzeug.utils import secure_filename
-from sqlalchemy import desc
 from google.protobuf.json_format import MessageToDict
 from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
 from pygate.models import Files, Ffs, Logs
+from pygate.forms import FfsForm
+from pygate.helpers import create_ffs
 
 
 @app.route("/", methods=["GET"])
@@ -57,37 +60,7 @@ def files():
         ffs = Ffs.query.filter_by(default=True).first()
         if ffs is None:
             # No FFS exists yet so create one
-            ffs = powergate.ffs.create()
-            creation_date = datetime.now().replace(microsecond=0)
-            filecoin_file_system = Ffs(
-                ffs_id=ffs.id,
-                token=ffs.token,
-                creation_date=creation_date,
-                default=True,
-            )
-
-            # Record new FFS creation in log table
-            event = Logs(
-                timestamp=creation_date,
-                event="Created new Filecoin FileSystem (FFS): " + ffs.id,
-            )
-            db.session.add(event)
-            db.session.commit()
-
-            address = powergate.ffs.addrs_list(ffs.token)
-            obj = MessageToDict(address)
-            wallet = obj["addrs"][0]["addr"]
-
-            # Record new Wallet creation in log table
-            event = Logs(
-                timestamp=creation_date, event="Created new Wallet: " + wallet,
-            )
-            db.session.add(event)
-
-            db.session.add(filecoin_file_system)
-            db.session.commit()
-            ffs = Ffs.query.filter_by(default=True).first()
-
+            ffs = create_ffs(default=True)
         try:
             # Create an iterator of the uploaded file using the helper function
             file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
@@ -159,6 +132,7 @@ def cid_config(cid, ffs_id):
     # Retrieve the CID config from Powergate
     config = powergate.ffs.default_config_for_cid(cid, ffs.token)
 
+    """ TODO: PRETTY JSONIFY OUTPUT """
     # Output the info to a flash notification
     flash(config)
 
@@ -270,11 +244,44 @@ def wallets():
 
 @app.route("/logs", methods=["GET"])
 def logs():
+    """
+    Display all the log entries recorded by the application
+    """
 
     logs = Logs.query.all()
+
     return render_template("logs.html", logs=logs)
 
 
 @app.route("/settings", methods=["GET"])
 def settings():
-    return render_template("settings.html")
+
+    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+
+    ffses = Ffs.query.order_by((Ffs.default).desc()).all()
+    configs = []
+
+    for filecoin_filesystem in ffses:
+        default_config = powergate.ffs.default_config(filecoin_filesystem.token)
+        msg_dict = MessageToDict(default_config)
+        config_json = json.dumps(msg_dict, indent=2)
+        configs.append(
+            {
+                "ffs": filecoin_filesystem.ffs_id,
+                "ffs_default": filecoin_filesystem.default,
+                "config": config_json,
+            }
+        )
+
+    form = FfsForm()
+
+    return render_template("settings.html", configs=configs, form=form)
+
+
+@app.route("/new_ffs", methods=["POST"])
+def new_ffs():
+    form = FfsForm()
+
+    create_ffs(default=form.default.data)
+
+    return redirect("settings")
