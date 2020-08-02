@@ -227,15 +227,14 @@ def wallets():
         addresses_dict = MessageToDict(addresses)
 
         for address in addresses_dict["addrs"]:
-            # TODO: FIX ME https://github.com/pygate/pygate-gRPC/issues/27
-            # balance = powergate.wallet.balance(address["addr"])
+            balance = powergate.wallet.balance(address["addr"])
             wallets.append(
                 {
                     "ffs": filecoin_filesystem.ffs_id,
                     "name": address["name"],
                     "address": address["addr"],
                     "type": address["type"],
-                    "balance": "[fix me]",
+                    "balance": str(balance.balance),
                 }
             )
 
