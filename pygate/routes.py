@@ -65,9 +65,7 @@ def files():
             # Create an iterator of the uploaded file using the helper function
             file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
             # Convert the iterator into request and then add to the hot set (IPFS)
-            file_hash = powergate.ffs.add_to_hot(
-                bytes_to_chunks(file_iterator), ffs.token
-            )
+            file_hash = powergate.ffs.stage(bytes_to_chunks(file_iterator), ffs.token)
             # Push the file to Filecoin
             powergate.ffs.push(file_hash.cid, ffs.token)
 
