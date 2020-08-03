@@ -41,6 +41,6 @@ def create_ffs(default=False):
     db.session.add(event)
     db.session.commit()
 
-    ffs = Ffs.query.filter_by(default=True).first()
+    new_ffs = Ffs.query.filter_by(ffs_id=ffs.id).first()
 
-    return ffs
+    return new_ffs

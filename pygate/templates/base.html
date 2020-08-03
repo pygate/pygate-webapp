@@ -11,7 +11,7 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/jquery-3.5.0.min.js') }}"></script>
-    <script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script type="text/javascript" language="javascript" src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
     {% include "datatable.html" %}
 
@@ -30,8 +30,8 @@
         <li class="nav-item" id="logs">
           <a class="nav-link" href="{{ url_for('logs') }}">Logs</a>
         </li>
-        <li class="nav-item" id="settings">
-          <a class="nav-link" href="{{ url_for('settings') }}">Settings</a>
+        <li class="nav-item" id="config">
+          <a class="nav-link" href="{{ url_for('config') }}">Configuration</a>
         </li>
       </ul>
     </div>

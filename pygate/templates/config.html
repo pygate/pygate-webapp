@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-top: 40px;">
+
+
+<table><!-- TODO change to CSS layout -->
+<tr>
+<td>
+<div class="dropdown">
+    <button class="btn btn-info dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Edit FFS config</button>
+      <div class="dropdown-menu">
+        {% if all_ffses %}
+          {% for ffs in all_ffses %}
+          {% set id = ffs.ffs_id %}
+            <a class="dropdown-item" href="{{ url_for("config", ffs_id = ffs.ffs_id )}}">
+              {% if ffs.default == 1 %}<strong>Default</strong>: {% endif %} {{ ffs.ffs_id }} </a>
+          {% endfor %}
+        {% endif %}
+      </div>
+</div>
+</td>
+
+<td>
+<form action="{{url_for('new_ffs')}}" method="post">
+<button type="submit" class="btn btn-success" style="margin-right: 10px; margin-left: 50px; width: 147px;">New FFS</button>
+{{ form.default.label }}&nbsp;{{ form.default() }}
+</form>
+</td>
+</table>
+
+
+<div class="row" style="margin-top: 30px;">
+<div class="col config-display">
+  {% if active_ffs.default == 1 %}<strong>Default FFS</strong>: {% else %}FFS: {% endif %} {{ active_ffs.ffs_id }}
+  <div style="margin-top: 10px;">default config:
+  <pre>{{ ffs_config_json }}</pre>
+  </div>
+
+<!-- end column -->
+</div>
+Hello Hello
+<div class="col">
+
+<!-- end column -->
+</div>
+
+<!-- end row -->
+</div>
+
+<!-- end container -->
+</div>
+
+{% endblock %}

@@ -8,6 +8,7 @@ from datetime import datetime
 from flask import (
     render_template,
     redirect,
+    url_for,
     flash,
     request,
     send_file,
@@ -250,35 +251,43 @@ def logs():
     return render_template("logs.html", logs=logs)
 
 
-@app.route("/settings", methods=["GET"])
-def settings():
+@app.route("/config", methods=["GET"])
+@app.route("/config/<ffs_id>", methods=["GET"])
+def config(ffs_id=None):
+    """
+    Create and edit FFS config settings
+    """
+    form = FfsForm()
 
     powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
 
-    ffses = Ffs.query.order_by((Ffs.default).desc()).all()
-    configs = []
+    if ffs_id == None:
+        active_ffs = Ffs.query.filter_by(default=True).first()
+    else:
+        active_ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
 
-    for filecoin_filesystem in ffses:
-        default_config = powergate.ffs.default_config(filecoin_filesystem.token)
-        msg_dict = MessageToDict(default_config)
-        config_json = json.dumps(msg_dict, indent=2)
-        configs.append(
-            {
-                "ffs": filecoin_filesystem.ffs_id,
-                "ffs_default": filecoin_filesystem.default,
-                "config": config_json,
-            }
-        )
+    default_config = powergate.ffs.default_config(active_ffs.token)
+    msg_dict = MessageToDict(default_config)
+    ffs_config_json = json.dumps(msg_dict, indent=2)
 
-    form = FfsForm()
+    all_ffses = Ffs.query.order_by((Ffs.default).desc()).all()
 
-    return render_template("settings.html", configs=configs, form=form)
+    return render_template(
+        "config.html",
+        form=form,
+        active_ffs=active_ffs,
+        ffs_config_json=ffs_config_json,
+        all_ffses=all_ffses,
+    )
 
 
 @app.route("/new_ffs", methods=["POST"])
 def new_ffs():
+    """
+    Create a new Filecoin Filesystem (FFS), including a default wallet and config
+    """
     form = FfsForm()
 
-    create_ffs(default=form.default.data)
+    new_ffs = create_ffs(default=form.default.data)
 
-    return redirect("settings")
+    return redirect(url_for("config", ffs_id=new_ffs.ffs_id))
