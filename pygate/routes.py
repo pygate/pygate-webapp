@@ -119,28 +119,6 @@ def files():
     return render_template("files.html", stored_files=stored_files)
 
 
-@app.route("/cid_config/<cid>/<ffs_id>", methods=["GET"])
-def cid_config(cid, ffs_id):
-    """
-    Using its CID, output the FFS config options used to store a file
-    """
-
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-
-    ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
-    # Retrieve the CID config from Powergate
-    config = powergate.ffs.default_config_for_cid(cid, ffs.token)
-
-    """ TODO: PRETTY JSONIFY OUTPUT """
-    # Output the info to a flash notification
-    flash(config)
-
-    stored_files = Files.query.all()
-
-    # Return the files template
-    return render_template("files.html", stored_files=stored_files)
-
-
 @app.route("/download/<cid>", methods=["GET"])
 def download(cid):
     """
@@ -269,6 +247,13 @@ def config(ffs_id=None):
     default_config = powergate.ffs.default_config(active_ffs.token)
     msg_dict = MessageToDict(default_config)
     ffs_config_json = json.dumps(msg_dict, indent=2)
+
+    config_edit = []
+    config_edit.append(
+        {"hot-enabled": msg_dict["defaultStorageConfig"]["hot"]["enabled"]}
+    )
+
+    print(config_edit)
 
     all_ffses = Ffs.query.order_by((Ffs.default).desc()).all()
 

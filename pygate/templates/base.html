@@ -48,12 +48,7 @@
 <script>
 // set active menu item
 $(document).ready(function () {
-  if ("{{request.endpoint}}" == "cid_config"){
-    $("#files").addClass("active");
-  }
-  else {
   $("#{{request.endpoint}}").addClass("active");
-  }
  })
 </script>
 

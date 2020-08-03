@@ -60,7 +60,7 @@
             <td><a href="{{ url_for('download', cid=file.CID) }}">{{ file.file_name }}</a></td>
             <td>{{ file.file_size|filesizeformat(true) }} </td>
             <td>{{ file.upload_date }}</td>
-            <td>{{ file.CID }} (<a href="{{ url_for('cid_config', cid=file.CID, ffs_id=file.Ffs)}}">config</a>)</td>
+            <td>{{ file.CID }} (<a href="{{ url_for('config', ffs_id=file.Ffs)}}">config</a>)</td>
             <td>{{ file.Ffs }}</td>
           </tr>
         {% endfor %}
