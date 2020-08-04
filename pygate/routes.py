@@ -20,7 +20,7 @@ from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
 from pygate.models import Files, Ffs, Logs
-from pygate.forms import FfsForm
+from pygate.forms import NewFfsForm, FfsConfigForm
 from pygate.helpers import create_ffs
 
 
@@ -201,16 +201,15 @@ def wallets():
 
     for filecoin_filesystem in ffses:
         addresses = powergate.ffs.addrs_list(filecoin_filesystem.token)
-        addresses_dict = MessageToDict(addresses)
 
-        for address in addresses_dict["addrs"]:
-            balance = powergate.wallet.balance(address["addr"])
+        for address in addresses.addrs:
+            balance = powergate.wallet.balance(address.addr)
             wallets.append(
                 {
                     "ffs": filecoin_filesystem.ffs_id,
-                    "name": address["name"],
-                    "address": address["addr"],
-                    "type": address["type"],
+                    "name": address.name,
+                    "address": address.addr,
+                    "type": address.type,
                     "balance": str(balance.balance),
                 }
             )
@@ -235,9 +234,9 @@ def config(ffs_id=None):
     """
     Create and edit FFS config settings
     """
-    form = FfsForm()
-
     powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+
+    NewFFSForm = NewFfsForm()
 
     if ffs_id == None:
         active_ffs = Ffs.query.filter_by(default=True).first()
@@ -245,23 +244,65 @@ def config(ffs_id=None):
         active_ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
 
     default_config = powergate.ffs.default_config(active_ffs.token)
+
+    """TODO: Move MessageToDict helper to pygate-grpc client and return dict"""
     msg_dict = MessageToDict(default_config)
-    ffs_config_json = json.dumps(msg_dict, indent=2)
 
-    config_edit = []
-    config_edit.append(
-        {"hot-enabled": msg_dict["defaultStorageConfig"]["hot"]["enabled"]}
-    )
+    ConfigForm = FfsConfigForm()
 
-    print(config_edit)
+    # populate form variables from config dictionary
+    try:
+        hot_enabled = msg_dict["defaultStorageConfig"]["hot"]["enabled"]
+    except KeyError:
+        hot_enabled = False
+    try:
+        allow_unfreeze = msg_dict["defaultStorageConfig"]["hot"]["allow_unfreeze"]
+    except KeyError:
+        allow_unfreeze = False
+    try:
+        add_timeout = msg_dict["defaultStorageConfig"]["hot"]["ipfs"]["add_timeout"]
+    except KeyError:
+        add_timeout = 0
+    try:
+        cold_enabled = msg_dict["defaultStorageConfig"]["cold"]["enabled"]
+    except KeyError:
+        cold_enabled = False
+
+    ConfigForm = FfsConfigForm()
+
+    ConfigForm.hot_enabled.data = hot_enabled
+    ConfigForm.allow_unfreeze.data = allow_unfreeze
+    ConfigForm.add_timeout.data = add_timeout
+    ConfigForm.cold_enabled.data = cold_enabled
+
+    """
+    if form.validate_on_submit():
+            storageService.name = form.name.data
+            storageService.url = form.url.data
+            storageService.user_name = form.user_name.data
+            storageService.api_key = form.api_key.data
+            storageService.download_limit = form.download_limit.data
+            storageService.download_offset = form.download_offset.data
+            if form.default.data is True:
+                storageServices = storage_services.query.all()
+                for ss in storageServices:
+                    ss.default = False
+            storageService.default = form.default.data
+            db.session.commit()
+            flash("Storage service {} updated".format(form.name.data))
+            return redirect(url_for("aggregator.ss"))
+        return render_template(
+            "edit_storage_service.html", title="Storage Service", form=form
+        )
+    """
 
     all_ffses = Ffs.query.order_by((Ffs.default).desc()).all()
 
     return render_template(
         "config.html",
-        form=form,
+        NewFfsForm=NewFFSForm,
+        FfsConfigForm=ConfigForm,
         active_ffs=active_ffs,
-        ffs_config_json=ffs_config_json,
         all_ffses=all_ffses,
     )
 
@@ -271,8 +312,20 @@ def new_ffs():
     """
     Create a new Filecoin Filesystem (FFS), including a default wallet and config
     """
-    form = FfsForm()
+    form = NewFfsForm()
 
     new_ffs = create_ffs(default=form.default.data)
 
     return redirect(url_for("config", ffs_id=new_ffs.ffs_id))
+
+
+@app.route("/change_config/<ffs_id>", methods=["POST"])
+def change_config(ffs_id):
+    """
+    Change the default configuration for a FFS, triggering a change to all files
+    that were uploaded using that config.
+    """
+
+    form = FfsConfigForm
+
+    return redirect(url_for("config", ffs_id=ffs_id))
