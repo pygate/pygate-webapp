@@ -234,67 +234,136 @@ def config(ffs_id=None):
     """
     Create and edit FFS config settings
     """
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-
     NewFFSForm = NewFfsForm()
+
+    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
 
     if ffs_id == None:
         active_ffs = Ffs.query.filter_by(default=True).first()
     else:
         active_ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
 
+    if active_ffs == None:
+        active_ffs = create_ffs(default=True)
+
     default_config = powergate.ffs.default_config(active_ffs.token)
 
     """TODO: Move MessageToDict helper to pygate-grpc client and return dict"""
     msg_dict = MessageToDict(default_config)
 
-    ConfigForm = FfsConfigForm()
+    print(msg_dict)
 
-    # populate form variables from config dictionary
+    # populate form values from config dictionary
     try:
         hot_enabled = msg_dict["defaultStorageConfig"]["hot"]["enabled"]
     except KeyError:
         hot_enabled = False
     try:
-        allow_unfreeze = msg_dict["defaultStorageConfig"]["hot"]["allow_unfreeze"]
+        allow_unfreeze = msg_dict["defaultStorageConfig"]["hot"]["allowUnfreeze"]
     except KeyError:
         allow_unfreeze = False
     try:
-        add_timeout = msg_dict["defaultStorageConfig"]["hot"]["ipfs"]["add_timeout"]
+        add_timeout = msg_dict["defaultStorageConfig"]["hot"]["ipfs"]["addTimeout"]
     except KeyError:
         add_timeout = 0
     try:
         cold_enabled = msg_dict["defaultStorageConfig"]["cold"]["enabled"]
     except KeyError:
         cold_enabled = False
+    try:
+        rep_factor = msg_dict["defaultStorageConfig"]["cold"]["filecoin"]["repFactor"]
+    except KeyError:
+        rep_factor = 0
+    try:
+        deal_min_duration = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+            "dealMinDuration"
+        ]
+    except KeyError:
+        deal_min_duration = 0
+    try:
+        excluded_miners_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+            "excludedMiners"
+        ]
+        # Break out array into comma separate values
+        excluded_miners = ""
+        for miner in excluded_miners_array:
+            excluded_miners += miner
+            # Don't add a comma if this is only or last item in array
+            if (len(excluded_miners_array)) > 1:
+                if (excluded_miners_array.index(miner) + 1) != len(
+                    excluded_miners_array
+                ):
+                    excluded_miners += ","
+    except KeyError:
+        excluded_miners = None
+    try:
+        trusted_miners_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+            "trustedMiners"
+        ]
+        # Break out array into comma separate values
+        trusted_miners = ""
+        for miner in trusted_miners_array:
+            trusted_miners += miner
+            # Don't add a comma if this is only or last item in array
+            if (len(trusted_miners_array)) > 1:
+                if (trusted_miners_array.index(miner) + 1) != len(trusted_miners_array):
+                    trusted_miners += ","
+    except KeyError:
+        trusted_miners = None
+    try:
+        country_codes_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+            "countryCodes"
+        ]
+        # Break out array into comma separate values
+        country_codes = ""
+        for country in country_codes_array:
+            country_codes += country
+            # Don't add a comma if this is only or last item in array
+            if (len(country_codes_array)) > 1:
+                if (country_codes_array.index(country) + 1) != len(country_codes_array):
+                    country_codes += ","
+    except KeyError:
+        country_codes = None
+    try:
+        renew_enabled = msg_dict["defaultStorageConfig"]["cold"]["filecoin"]["renew"][
+            "enabled"
+        ]
+    except KeyError:
+        renew_enabled = False
+    try:
+        renew_threshold = msg_dict["defaultStorageConfig"]["cold"]["filecoin"]["renew"][
+            "threshold"
+        ]
+    except KeyError:
+        renew_threshold = 0
 
+    wallet_address = msg_dict["defaultStorageConfig"]["cold"]["filecoin"]["addr"]
+
+    try:
+        max_price = msg_dict["defaultStorageConfig"]["cold"]["filecoin"]["maxPrice"]
+    except KeyError:
+        max_price = 0
+    try:
+        repairable = msg_dict["defaultStorageConfig"]["repairable"]
+    except KeyError:
+        repairable = True
+
+    # Instantiate config form
     ConfigForm = FfsConfigForm()
-
+    ConfigForm.make_default.data = active_ffs.default
     ConfigForm.hot_enabled.data = hot_enabled
     ConfigForm.allow_unfreeze.data = allow_unfreeze
     ConfigForm.add_timeout.data = add_timeout
     ConfigForm.cold_enabled.data = cold_enabled
-
-    """
-    if form.validate_on_submit():
-            storageService.name = form.name.data
-            storageService.url = form.url.data
-            storageService.user_name = form.user_name.data
-            storageService.api_key = form.api_key.data
-            storageService.download_limit = form.download_limit.data
-            storageService.download_offset = form.download_offset.data
-            if form.default.data is True:
-                storageServices = storage_services.query.all()
-                for ss in storageServices:
-                    ss.default = False
-            storageService.default = form.default.data
-            db.session.commit()
-            flash("Storage service {} updated".format(form.name.data))
-            return redirect(url_for("aggregator.ss"))
-        return render_template(
-            "edit_storage_service.html", title="Storage Service", form=form
-        )
-    """
+    ConfigForm.rep_factor.data = rep_factor
+    ConfigForm.deal_min_duration.data = deal_min_duration
+    ConfigForm.excluded_miners.data = excluded_miners
+    ConfigForm.trusted_miners.data = trusted_miners
+    ConfigForm.country_codes.data = country_codes
+    ConfigForm.renew_enabled.data = renew_enabled
+    ConfigForm.renew_threshold.data = renew_threshold
+    ConfigForm.max_price.data = max_price
+    ConfigForm.repairable.data = repairable
 
     all_ffses = Ffs.query.order_by((Ffs.default).desc()).all()
 
@@ -302,6 +371,7 @@ def config(ffs_id=None):
         "config.html",
         NewFfsForm=NewFFSForm,
         FfsConfigForm=ConfigForm,
+        wallet_address=wallet_address,
         active_ffs=active_ffs,
         all_ffses=all_ffses,
     )
@@ -319,13 +389,68 @@ def new_ffs():
     return redirect(url_for("config", ffs_id=new_ffs.ffs_id))
 
 
-@app.route("/change_config/<ffs_id>", methods=["POST"])
-def change_config(ffs_id):
+@app.route("/change_config/<ffs_id>/<wallet>", methods=["POST"])
+def change_config(ffs_id, wallet):
     """
     Change the default configuration for a FFS, triggering a change to all files
     that were uploaded using that config.
     """
 
-    form = FfsConfigForm
+    ffs = Ffs.query.filter_by(ffs_id=ffs_id).first()
+
+    form = FfsConfigForm(request.form)
+
+    # Change default FFS
+    if form.make_default.data == True:
+        current_default_ffs = Ffs.query.filter_by(default=True).first()
+        if current_default_ffs is not None:
+            current_default_ffs.default = False
+        ffs.default = True
+        db.session.commit()
+
+    exlcude_miners = []
+    trust_miners = []
+    countries = []
+    exclude_miners = form.excluded_miners.data.split(",")
+    trust_miners = form.trusted_miners.data.split(",")
+    countries = form.country_codes.data.split(",")
+
+    new_config = {
+        "hot": {
+            "enabled": form.hot_enabled.data,
+            "allowUnfreeze": form.allow_unfreeze.data,
+            "ipfs": {"addTimeout": form.add_timeout.data},
+        },
+        "cold": {
+            "enabled": form.cold_enabled.data,
+            "filecoin": {
+                "repFactor": form.rep_factor.data,
+                "dealMinDuration": form.deal_min_duration.data,
+                "excludedMiners": exclude_miners,
+                "trustedMiners": trust_miners,
+                "countryCodes": countries,
+                "renew": {
+                    "enabled": form.renew_enabled.data,
+                    "threshold": form.renew_threshold.data,
+                },
+                "addr": wallet,
+                "maxPrice": form.max_price.data,
+            },
+        },
+        "repairable": True,
+    }
+
+    new_config_json = json.dumps(new_config)
+
+    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate.ffs.set_default_config(new_config_json, ffs.token)
+
+    # Log the configuration change
+    event = Logs(
+        timestamp=datetime.now().replace(microsecond=0),
+        event="Changed default configuration for FFS " + ffs.ffs_id,
+    )
+    db.session.add(event)
+    db.session.commit()
 
     return redirect(url_for("config", ffs_id=ffs_id))
