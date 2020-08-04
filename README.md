@@ -1,6 +1,8 @@
 # pygate-webapp
 A Filecoin Flask template application for Python developers using Textile.io's Powergate.
 
+![screencap](pygate-webapp-screenshot1.png)
+
 # Installation
 * Clone files and cd to directory:  
   `git clone https://github.com/pygate/pygate-webapp && cd pygate-webapp`  
