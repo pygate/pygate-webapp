@@ -281,46 +281,44 @@ def config(ffs_id=None):
     except KeyError:
         deal_min_duration = 0
     try:
-        excluded_miners_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+        excluded_miners_list = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
             "excludedMiners"
         ]
-        # Break out array into comma separate values
+        # Break out list into comma separate values
         excluded_miners = ""
-        for miner in excluded_miners_array:
+        for miner in excluded_miners_list:
             excluded_miners += miner
-            # Don't add a comma if this is only or last item in array
-            if (len(excluded_miners_array)) > 1:
-                if (excluded_miners_array.index(miner) + 1) != len(
-                    excluded_miners_array
-                ):
+            # Don't add a comma if this is only or last item in list
+            if (len(excluded_miners_list)) > 1:
+                if (excluded_miners_list.index(miner) + 1) != len(excluded_miners_list):
                     excluded_miners += ","
     except KeyError:
         excluded_miners = None
     try:
-        trusted_miners_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+        trusted_miners_list = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
             "trustedMiners"
         ]
-        # Break out array into comma separate values
+        # Break out list into comma separate values
         trusted_miners = ""
-        for miner in trusted_miners_array:
+        for miner in trusted_miners_list:
             trusted_miners += miner
-            # Don't add a comma if this is only or last item in array
-            if (len(trusted_miners_array)) > 1:
-                if (trusted_miners_array.index(miner) + 1) != len(trusted_miners_array):
+            # Don't add a comma if this is only or last item in list
+            if (len(trusted_miners_list)) > 1:
+                if (trusted_miners_list.index(miner) + 1) != len(trusted_miners_list):
                     trusted_miners += ","
     except KeyError:
         trusted_miners = None
     try:
-        country_codes_array = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
+        country_codes_list = msg_dict["defaultStorageConfig"]["cold"]["filecoin"][
             "countryCodes"
         ]
-        # Break out array into comma separate values
+        # Break out list into comma separate values
         country_codes = ""
-        for country in country_codes_array:
+        for country in country_codes_list:
             country_codes += country
-            # Don't add a comma if this is only or last item in array
-            if (len(country_codes_array)) > 1:
-                if (country_codes_array.index(country) + 1) != len(country_codes_array):
+            # Don't add a comma if this is only or last item in list
+            if (len(country_codes_list)) > 1:
+                if (country_codes_list.index(country) + 1) != len(country_codes_list):
                     country_codes += ","
     except KeyError:
         country_codes = None
