@@ -416,13 +416,16 @@ def change_config(ffs_id, wallet):
     new_config_json = json.dumps(new_config)
 
     powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-    powergate.ffs.set_default_config(new_config_json, ffs.token)
+    try:
+        powergate.ffs.set_default_config(new_config_json, ffs.token)
+        event = "Changed default configuration for FFS " + ffs.ffs_id
+    except Exception as e:
+        # Output error message if download from Filecoin fails
+        flash("failed to change configuration. {}".format(e))
+        event = str(e)
 
-    # Log the configuration change
-    event = Logs(
-        timestamp=datetime.now().replace(microsecond=0),
-        event="Changed default configuration for FFS " + ffs.ffs_id,
-    )
+    # Log the configuration change or error
+    event = Logs(timestamp=datetime.now().replace(microsecond=0), event=event,)
     db.session.add(event)
     db.session.commit()
 
