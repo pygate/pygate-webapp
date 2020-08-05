@@ -10,8 +10,8 @@
       <form action = "{{ url_for('files') }}" method = "POST" enctype = "multipart/form-data">
       <div class="input-group mb-3">
         <div class="custom-file">
-          <input type="file" class="custom-file-input" name="uploadfile">
-          <label class="custom-file-label" for="uploadfile" aria-describedby="inputGroupFileAddon02" >Choose file to add to Filecoin storage</label>
+          <input type="file" class="custom-file-input" name="uploadfile" multiple>
+          <label class="custom-file-label" for="uploadfile" aria-describedby="inputGroupFileAddon02">Choose file(s) to add to Filecoin storage</label>
         </div>
         <div class="input-group-append">
           <input type="submit" class="input-group-text" id="inputGroupFileAddon02" value="Upload" />
