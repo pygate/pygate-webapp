@@ -26,3 +26,19 @@
   border-radius: .25rem;
   margin: 0 20px;
 }
+
+#package_name {
+  padding: 6px 10px 6px 12px;
+  border-radius: .25rem;
+  border: 1px solid #CCC;
+  color: #808080;
+  width: 503px
+}
+
+#package {
+  margin-top: 20px;
+}
+
+.custom-file-label {
+  color: #808080;
+}

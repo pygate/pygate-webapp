@@ -2,6 +2,11 @@ from flask_wtf import FlaskForm
 from wtforms import BooleanField, IntegerField, StringField
 
 
+class UploadForm(FlaskForm):
+    make_package = BooleanField("Create one compressed package from multiple files?")
+    package_name = StringField("Package name")
+
+
 class NewFfsForm(FlaskForm):
     default = BooleanField("Make default?")
 

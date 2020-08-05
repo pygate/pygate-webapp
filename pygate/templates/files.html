@@ -8,14 +8,20 @@
     <div class="col">
 
       <form action = "{{ url_for('files') }}" method = "POST" enctype = "multipart/form-data">
+
       <div class="input-group mb-3">
         <div class="custom-file">
-          <input type="file" class="custom-file-input" name="uploadfile" multiple>
+          <input type="file" class="custom-file-input" name="uploadfile" id="uploadfile" multiple>
           <label class="custom-file-label" for="uploadfile" aria-describedby="inputGroupFileAddon02">Choose file(s) to add to Filecoin storage</label>
         </div>
         <div class="input-group-append">
           <input type="submit" class="input-group-text" id="inputGroupFileAddon02" value="Upload" />
         </div>
+      </div>
+
+      <div id="package">
+      {{ upload_form.make_package.label }}&nbsp;&nbsp;{{ upload_form.make_package(size=20) }}<br />
+      {{ upload_form.package_name(size=48, value="Package name") }}
       </div>
       </form>
 
@@ -76,10 +82,17 @@
 </div>
 
 <script>
-// Add the following code if you want the name of the file appear on select
+
+// Add the name of the selected file
 $(".custom-file-input").on("change", function() {
-  var fileName = $(this).val().split("\\").pop();
-  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+  var files = $("#uploadfile")[0].files;
+  if (files.length > 1) {
+    $(this).siblings(".custom-file-label").addClass("selected").html("Multiple files selected");
+  }
+  else {
+    var fileName = $(this).val().split("\\").pop();
+    $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+  }
 });
 </script>
 
