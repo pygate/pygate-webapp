@@ -41,78 +41,82 @@ def files():
         if not os.path.exists(upload_path):
             os.makedirs(upload_path)
         # Get the file and filename from the request
-        upload = request.files["uploadfile"]
-        file_name = secure_filename(upload.filename)
+        uploads = request.files.getlist("uploadfile")
+        for upload in uploads:
+            file_name = secure_filename(upload.filename)
+            print(file_name)
 
-        try:
-            # Save the uploaded file
-            upload.save(os.path.join(upload_path, file_name))
-        except:
-            # Respond if the user did not provide a file to upload
-            stored_files = Files.query.all()
-            flash("Please choose a file to upload to Filecoin")
-            return render_template("files.html", stored_files=stored_files)
+            try:
+                # Save the uploaded file
+                upload.save(os.path.join(upload_path, file_name))
+            except:
+                # Respond if the user did not provide a file to upload
+                stored_files = Files.query.all()
+                flash("Please choose a file to upload to Filecoin")
+                return render_template("files.html", stored_files=stored_files)
 
-        """TODO: ENCRYPT FILE"""
+            """TODO: ENCRYPT FILE"""
 
-        # Push file to Filecoin via Powergate
-        powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-        # Retrieve information for default Filecoin FileSystem (FFS)
-        ffs = Ffs.query.filter_by(default=True).first()
-        if ffs is None:
-            # No FFS exists yet so create one
-            ffs = create_ffs(default=True)
-        try:
-            # Create an iterator of the uploaded file using the helper function
-            file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
-            # Convert the iterator into request and then add to the hot set (IPFS)
-            file_hash = powergate.ffs.stage(bytes_to_chunks(file_iterator), ffs.token)
-            # Push the file to Filecoin
-            powergate.ffs.push(file_hash.cid, ffs.token)
+            # Push file to Filecoin via Powergate
+            powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+            # Retrieve information for default Filecoin FileSystem (FFS)
+            ffs = Ffs.query.filter_by(default=True).first()
+            if ffs is None:
+                # No FFS exists yet so create one
+                ffs = create_ffs(default=True)
+            try:
+                # Create an iterator of the uploaded file using the helper function
+                file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
+                # Convert the iterator into request and then add to the hot set (IPFS)
+                file_hash = powergate.ffs.stage(
+                    bytes_to_chunks(file_iterator), ffs.token
+                )
+                # Push the file to Filecoin
+                powergate.ffs.push(file_hash.cid, ffs.token)
 
-            # Note the upload date and file size
-            upload_date = datetime.now().replace(microsecond=0)
-            file_size = os.path.getsize(os.path.join(upload_path, file_name))
+                # Note the upload date and file size
+                upload_date = datetime.now().replace(microsecond=0)
+                file_size = os.path.getsize(os.path.join(upload_path, file_name))
 
-            """TODO: DELETE CACHED COPIES OF FILE UPLOADS """
+                """TODO: DELETE CACHED COPIES OF FILE UPLOADS """
 
-            # Save file information to database
-            file_upload = Files(
-                file_path=upload_path,
-                file_name=file_name,
-                upload_date=upload_date,
-                file_size=file_size,
-                CID=file_hash.cid,
-                ffs_id=ffs.id,
-            )
+                # Save file information to database
+                file_upload = Files(
+                    file_path=upload_path,
+                    file_name=file_name,
+                    upload_date=upload_date,
+                    file_size=file_size,
+                    CID=file_hash.cid,
+                    ffs_id=ffs.id,
+                )
 
-            # Record upload in log table
-            event = Logs(
-                timestamp=upload_date,
-                event="Uploaded "
-                + file_name
-                + " (CID: "
-                + file_hash.cid
-                + ") to Filecoin.",
-            )
-            db.session.add(file_upload)
-            db.session.add(event)
-            db.session.commit()
+                # Record upload in log table
+                event = Logs(
+                    timestamp=upload_date,
+                    event="Uploaded "
+                    + file_name
+                    + " (CID: "
+                    + file_hash.cid
+                    + ") to Filecoin.",
+                )
+                db.session.add(file_upload)
+                db.session.add(event)
+                db.session.commit()
 
-        except Exception as e:
-            # Output error message if pushing to Filecoin fails
-            flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
+            except Exception as e:
+                # Output error message if pushing to Filecoin fails
+                flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
 
-            # Update log table with error
-            event = Logs(
-                timestamp=datetime.now().replace(microsecond=0),
-                event="Upload ERROR: " + file_name + " " + str(e),
-            )
-            db.session.add(event)
-            db.session.commit()
+                # Update log table with error
+                event = Logs(
+                    timestamp=datetime.now().replace(microsecond=0),
+                    event="Upload ERROR: " + file_name + " " + str(e),
+                )
+                db.session.add(event)
+                db.session.commit()
 
-            """TODO: RESPOND TO SPECIFIC STATUS CODE DETAILS
-            (how to isolate these? e.g. 'status_code.details = ...')"""
+                """TODO: RESPOND TO SPECIFIC STATUS CODE DETAILS
+                (how to isolate these? e.g. 'status_code.details = ...')"""
 
     stored_files = Files.query.all()
 
