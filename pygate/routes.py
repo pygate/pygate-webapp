@@ -5,6 +5,7 @@ Define the web application's relative routes and the business logic for each
 import os
 import json
 from datetime import datetime
+import tarfile
 from flask import (
     render_template,
     redirect,
@@ -17,21 +18,23 @@ from flask import (
 from werkzeug.utils import secure_filename
 from google.protobuf.json_format import MessageToDict
 from pygate_grpc.client import PowerGateClient
-from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from pygate import app, db
 from pygate.models import Files, Ffs, Logs
-from pygate.forms import NewFfsForm, FfsConfigForm
-from pygate.helpers import create_ffs
+from pygate.forms import UploadForm, NewFfsForm, FfsConfigForm
+from pygate.helpers import create_ffs, push_to_filecoin
 
 
 @app.route("/", methods=["GET"])
 @app.route("/files", methods=["GET", "POST"])
 def files():
     """
-    Upload a new file to add to Filecoin via Powergate FFS and
+    Upload new files to add to Filecoin via Powergate FFS and
     list files previously added. Allow users to download files from
     Filecoin via this list.
     """
+
+    upload_form = UploadForm()
+    form = UploadForm(request.form)
 
     # Uploading a new file
     if request.method == "POST":
@@ -40,87 +43,57 @@ def files():
         upload_path = app.config["UPLOADDIR"]
         if not os.path.exists(upload_path):
             os.makedirs(upload_path)
-        # Get the file and filename from the request
+        # Get the file(s) and filename(s) from the request
         uploads = request.files.getlist("uploadfile")
+
+        # Create a tarball package if the user requested it
+        if form.make_package.data == True:
+            if form.package_name.data == "Package name" or form.package_name.data == "":
+                # Return if the user did not provide a name for the package
+                stored_files = Files.query.all()
+                flash("Please give the package a name.")
+                return render_template(
+                    "files.html", upload_form=upload_form, stored_files=stored_files
+                )
+
+            # Create the tar package
+            tarball_name = form.package_name.data + ".tar"
+            tarball = tarfile.open(os.path.join(upload_path, tarball_name), "w:gz")
+
+        # Loop over all files selected for upload
         for upload in uploads:
             file_name = secure_filename(upload.filename)
-            print(file_name)
-
             try:
+                """TODO: ENCRYPT FILE"""
                 # Save the uploaded file
                 upload.save(os.path.join(upload_path, file_name))
             except:
-                # Respond if the user did not provide a file to upload
+                # Return if the user did not provide a file to upload
                 stored_files = Files.query.all()
                 flash("Please choose a file to upload to Filecoin")
-                return render_template("files.html", stored_files=stored_files)
-
-            """TODO: ENCRYPT FILE"""
-
-            # Push file to Filecoin via Powergate
-            powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
-            # Retrieve information for default Filecoin FileSystem (FFS)
-            ffs = Ffs.query.filter_by(default=True).first()
-            if ffs is None:
-                # No FFS exists yet so create one
-                ffs = create_ffs(default=True)
-            try:
-                # Create an iterator of the uploaded file using the helper function
-                file_iterator = get_file_bytes(os.path.join(upload_path, file_name))
-                # Convert the iterator into request and then add to the hot set (IPFS)
-                file_hash = powergate.ffs.stage(
-                    bytes_to_chunks(file_iterator), ffs.token
-                )
-                # Push the file to Filecoin
-                powergate.ffs.push(file_hash.cid, ffs.token)
-
-                # Note the upload date and file size
-                upload_date = datetime.now().replace(microsecond=0)
-                file_size = os.path.getsize(os.path.join(upload_path, file_name))
-
-                """TODO: DELETE CACHED COPIES OF FILE UPLOADS """
-
-                # Save file information to database
-                file_upload = Files(
-                    file_path=upload_path,
-                    file_name=file_name,
-                    upload_date=upload_date,
-                    file_size=file_size,
-                    CID=file_hash.cid,
-                    ffs_id=ffs.id,
+                return render_template(
+                    "files.html", upload_form=upload_form, stored_files=stored_files
                 )
 
-                # Record upload in log table
-                event = Logs(
-                    timestamp=upload_date,
-                    event="Uploaded "
-                    + file_name
-                    + " (CID: "
-                    + file_hash.cid
-                    + ") to Filecoin.",
-                )
-                db.session.add(file_upload)
-                db.session.add(event)
-                db.session.commit()
+            # Add the file to the tar package if this option was selected
+            if form.make_package.data == True:
+                tarball.add(os.path.join(upload_path, file_name), file_name)
+                # Keep looping over files to add to tar package
+                continue
 
-            except Exception as e:
-                # Output error message if pushing to Filecoin fails
-                flash("'{}' failed to upload to Filecoin. {}".format(file_name, e))
+            # Add uploaded files to Filecoin
+            push_to_filecoin(upload_path, file_name)
 
-                # Update log table with error
-                event = Logs(
-                    timestamp=datetime.now().replace(microsecond=0),
-                    event="Upload ERROR: " + file_name + " " + str(e),
-                )
-                db.session.add(event)
-                db.session.commit()
-
-                """TODO: RESPOND TO SPECIFIC STATUS CODE DETAILS
-                (how to isolate these? e.g. 'status_code.details = ...')"""
+        if form.make_package.data == True:
+            tarball.close()
+            # Add tar package to Filecoin
+            push_to_filecoin(upload_path, tarball_name)
 
     stored_files = Files.query.all()
 
-    return render_template("files.html", stored_files=stored_files)
+    return render_template(
+        "files.html", upload_form=upload_form, stored_files=stored_files
+    )
 
 
 @app.route("/download/<cid>", methods=["GET"])
@@ -254,8 +227,6 @@ def config(ffs_id=None):
 
     """TODO: Move MessageToDict helper to pygate-grpc client and return dict"""
     msg_dict = MessageToDict(default_config)
-
-    print(msg_dict)
 
     # populate form values from config dictionary
     try:
