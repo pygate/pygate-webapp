@@ -38,6 +38,7 @@ setup(
     entry_points={"console_scripts": ["pygate-webapp=pygate_webapp.cli:run"],},
     author="Pygate Team",
     author_email="info@pygate.com",
+    include_package_data=True,
     license="MIT",
     packages=[package_name],
     long_description=long_description,
