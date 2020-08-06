@@ -1,0 +1,5 @@
+include *.css
+include *.png
+include *.js
+include *.html
+include pygate_webapp/VERSION
