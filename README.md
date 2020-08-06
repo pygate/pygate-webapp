@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/pygate-webapp.svg)](https://badge.fury.io/py/pygate-webapp)
+
 # pygate-webapp
 A Filecoin Flask template application for Python developers using Textile.io's [Powergate](https://docs.textile.io/powergate/) and the [Pygate gRPC](https://github.com/pygate/pygate-gRPC) client.
 
