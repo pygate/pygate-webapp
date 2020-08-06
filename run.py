@@ -1,8 +1,7 @@
 """
 Provide launch script for the Pygate application
 """
-
-from pygate import app
+from pygate_webapp.cli import run
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    run()    

@@ -1,7 +1,7 @@
 # pygate-webapp
 A Filecoin Flask template application for Python developers using Textile.io's [Powergate](https://docs.textile.io/powergate/) and the [Pygate gRPC](https://github.com/pygate/pygate-gRPC) client.
 
-![screencap](pygate-webapp-screenshot2.png)
+![screencap](assets/pygate-webapp-screenshot2.png)
 
 # Installation
 * Clone files and cd to directory:  

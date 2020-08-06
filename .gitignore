@@ -1,4 +1,3 @@
-pygate.db
 _uploads/
 _downloads/
 venv/
@@ -6,3 +5,5 @@ __pycache__/
 pygate/__pycache__/
 pygate/__init__.pyc
 .DS_Store
+*/**/pygate.db
+*.egg-info/

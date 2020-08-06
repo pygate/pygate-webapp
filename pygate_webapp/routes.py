@@ -18,14 +18,15 @@ from flask import (
 from werkzeug.utils import secure_filename
 from google.protobuf.json_format import MessageToDict
 from pygate_grpc.client import PowerGateClient
-from pygate import app, db
-from pygate.models import Files, Ffs, Logs
-from pygate.forms import UploadForm, NewFfsForm, FfsConfigForm
-from pygate.helpers import create_ffs, push_to_filecoin
+from flask import current_app
+from pygate_webapp.database import db
+from pygate_webapp.models import Files, Ffs, Logs
+from pygate_webapp.forms import UploadForm, NewFfsForm, FfsConfigForm
+from pygate_webapp.helpers import create_ffs, push_to_filecoin
 
 
-@app.route("/", methods=["GET"])
-@app.route("/files", methods=["GET", "POST"])
+@current_app.route("/", methods=["GET"])
+@current_app.route("/files", methods=["GET", "POST"])
 def files():
     """
     Upload new files to add to Filecoin via Powergate FFS and
@@ -40,7 +41,7 @@ def files():
     if request.method == "POST":
 
         # Use the default upload directory configured for the app
-        upload_path = app.config["UPLOADDIR"]
+        upload_path = current_app.config["UPLOADDIR"]
         if not os.path.exists(upload_path):
             os.makedirs(upload_path)
         # Get the file(s) and filename(s) from the request
@@ -96,7 +97,7 @@ def files():
     )
 
 
-@app.route("/download/<cid>", methods=["GET"])
+@current_app.route("/download/<cid>", methods=["GET"])
 def download(cid):
     """
     Retrieve a file from Filecoin via IPFS using Powergate and offer the user
@@ -109,12 +110,12 @@ def download(cid):
 
     try:
         # Retrieve data from Filecoin
-        powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+        powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
         data_ = powergate.ffs.get(file.CID, ffs.token)
 
         # Save the downloaded data as a file
         # Use the default download directory configured for the app
-        download_path = app.config["DOWNLOADDIR"]
+        download_path = current_app.config["DOWNLOADDIR"]
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
@@ -124,7 +125,7 @@ def download(cid):
                 out_file.write(data)
 
         # Create path to download file
-        safe_path = safe_join("../" + app.config["DOWNLOADDIR"], file.file_name)
+        safe_path = safe_join("../" + current_app.config["DOWNLOADDIR"], file.file_name)
 
         # Update log table with download information
         event = Logs(
@@ -164,14 +165,14 @@ def download(cid):
         return render_template("files.html", stored_files=stored_files)
 
 
-@app.route("/wallets", methods=["GET"])
+@current_app.route("/wallets", methods=["GET"])
 def wallets():
     """
     Retrieve all wallets from all FFSes and save them in a list for
     presentation on the UI template
     """
 
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
 
     ffses = Ffs.query.all()
     wallets = []
@@ -194,7 +195,7 @@ def wallets():
     return render_template("wallets.html", wallets=wallets)
 
 
-@app.route("/logs", methods=["GET"])
+@current_app.route("/logs", methods=["GET"])
 def logs():
     """
     Display all the log entries recorded by the application
@@ -205,15 +206,15 @@ def logs():
     return render_template("logs.html", logs=logs)
 
 
-@app.route("/config", methods=["GET"])
-@app.route("/config/<ffs_id>", methods=["GET"])
+@current_app.route("/config", methods=["GET"])
+@current_app.route("/config/<ffs_id>", methods=["GET"])
 def config(ffs_id=None):
     """
     Create and edit FFS config settings
     """
     NewFFSForm = NewFfsForm()
 
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
 
     if ffs_id == None:
         active_ffs = Ffs.query.filter_by(default=True).first()
@@ -350,7 +351,7 @@ def config(ffs_id=None):
     )
 
 
-@app.route("/new_ffs", methods=["POST"])
+@current_app.route("/new_ffs", methods=["POST"])
 def new_ffs():
     """
     Create a new Filecoin Filesystem (FFS), including a default wallet and config
@@ -362,7 +363,7 @@ def new_ffs():
     return redirect(url_for("config", ffs_id=new_ffs.ffs_id))
 
 
-@app.route("/change_config/<ffs_id>/<wallet>", methods=["POST"])
+@current_app.route("/change_config/<ffs_id>/<wallet>", methods=["POST"])
 def change_config(ffs_id, wallet):
     """
     Change the default configuration for a FFS, triggering a change to all files
@@ -415,7 +416,7 @@ def change_config(ffs_id, wallet):
 
     new_config_json = json.dumps(new_config)
 
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
     try:
         powergate.ffs.set_default_config(new_config_json, ffs.token)
         event = "Changed default configuration for FFS " + ffs.ffs_id

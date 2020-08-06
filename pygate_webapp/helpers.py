@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
-from flask import flash
+from flask import flash, current_app
 from pygate_grpc.client import PowerGateClient
 from pygate_grpc.ffs import get_file_bytes, bytes_to_chunks, chunks_to_bytes
 from google.protobuf.json_format import MessageToDict
-from pygate import app, db
-from pygate.models import Ffs, Logs, Files
+from pygate_webapp.database import db
+from pygate_webapp.models import Ffs, Logs, Files
 
 
 def create_ffs(default=False):
@@ -13,7 +13,7 @@ def create_ffs(default=False):
     Create a new Powergate Filecoin Filesystem (FFS)
     """
 
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
 
     if default == True:
         default_ffs = Ffs.query.filter_by(default=True).first()
@@ -52,7 +52,7 @@ def create_ffs(default=False):
 def push_to_filecoin(upload_path, file_name):
 
     # Push file to Filecoin via Powergate
-    powergate = PowerGateClient(app.config["POWERGATE_ADDRESS"])
+    powergate = PowerGateClient(current_app.config["POWERGATE_ADDRESS"])
 
     # Retrieve information for default Filecoin FileSystem (FFS)
     ffs = Ffs.query.filter_by(default=True).first()

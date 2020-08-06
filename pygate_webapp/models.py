@@ -2,7 +2,7 @@
 Define Pygate database models
 """
 
-from pygate import db
+from .database import db
 
 
 class Ffs(db.Model):

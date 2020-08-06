@@ -1,0 +1,31 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pipenv-setup = "*"
+pygate-webapp = {editable = true,path = "."}
+bump2version = "*"
+
+[packages]
+click = "*"
+grpcio = "*"
+itsdangerous = "*"
+protobuf = "*"
+pygate-grpc = "*"
+six = "*"
+Flask = "*"
+Flask-SQLAlchemy = "*"
+Flask-WTF = "*"
+Jinja2 =  "*"
+MarkupSafe =  "*"
+SQLAlchemy =  "*"
+Werkzeug =  "*"
+WTForms =  "*"
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+app = "python run.py"
