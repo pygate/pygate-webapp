@@ -7,6 +7,12 @@ verify_ssl = true
 pipenv-setup = "*"
 pygate-webapp = {editable = true,path = "."}
 bump2version = "*"
+twine = "*"
+black = "==19.10b0"
+setuptools = "*"
+wheel = "*"
+secretstorage = {markers = "sys_platform == 'linux'"}
+keyring = "==19.1.0"
 
 [packages]
 click = "*"
