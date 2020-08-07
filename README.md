@@ -3,7 +3,7 @@
 # pygate-webapp
 A Filecoin Flask template application for Python developers using Textile.io's [Powergate](https://docs.textile.io/powergate/) and the [Pygate gRPC](https://github.com/pygate/pygate-gRPC) client.
 
-![screencap](pygate-webapp-screenshot2.png)
+![screencap](assets/pygate-webapp-screenshot2.png)
 
 # Features
 * Upload a file or multiple files from your local machine to the Filecoin network.
@@ -16,7 +16,7 @@ A Filecoin Flask template application for Python developers using Textile.io's [
 * `pip install pygate-webapp`
 * check that the app installed properly:  
   `pygate-webapp --version`
-* This is a development release of the pygate-webapp. It is designed to work with a Dockerized [Localnet Powergate](https://docs.textile.io/powergate/localnet/). It is assumed this is running concurrently at the `127.0.0.1:5002` address. 
+* This is a development release of the pygate-webapp. It is designed to work with a Dockerized [Localnet Powergate](https://docs.textile.io/powergate/localnet/). It is assumed this is running concurrently at the `127.0.0.1:5002` address.
 * Start the app and check `localhost:5000` in your browser:  
   `pygate-webapp`
 * See `pygate-webapp -h` for setting options.
@@ -38,5 +38,3 @@ A Filecoin Flask template application for Python developers using Textile.io's [
 * Go to `localhost:5000` in your browser to use the app.
 * This is a development release of the pygate-webapp. It is designed to work with a Dockerized [Localnet Powergate](https://docs.textile.io/powergate/localnet/). It is assumed this is running at the `127.0.0.1:5002` address. You can change the POWERGATE_ADDRESS in the `config.py` file.
 * Help us improve this reference implementation. If you want to fix bugs, add new features, or improve existing ones, create a `dev/[feature-name]` branch and submit a Pull Request from it. Thanks!
-
-
