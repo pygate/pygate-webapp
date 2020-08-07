@@ -17,8 +17,9 @@ A Filecoin Flask template application for Python developers using Textile.io's [
 * check that the app installed properly:  
   `pygate-webapp --version`
 * This is a development release of the pygate-webapp. It is designed to work with a Dockerized [Localnet Powergate](https://docs.textile.io/powergate/localnet/). It is assumed this is running concurrently at the `127.0.0.1:5002` address.
-* Start the app and check `localhost:5000` in your browser:  
+* Start the app:  
   `pygate-webapp`
+* Visit `localhost:5000` in your browser to use the app. 
 * See `pygate-webapp -h` for setting options.
 * You can change the Powergate server address (e.g. to a different Docker host address or an online hosted instance of Powergate that is connected to Testnet or Mainnet). Use by the -p flag on startup:  
   `pygate-webapp -p 123.123.123.123:5002`
