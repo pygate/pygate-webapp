@@ -1,5 +1,11 @@
 [![PyPI version](https://badge.fury.io/py/pygate-webapp.svg)](https://badge.fury.io/py/pygate-webapp)
 
+
+# WARNING: USES DEPRECATED RELEASE
+This webapp was created as a reference implementation for the very first few releases of the Pygate gRPC client as part of the HackFS competition. Please note, that there have been significant backward incompatible changes made to Powergate and therefore Pygate since then. 
+
+The Pygate gRPC client is actively maintained though, including compatibility with the latest Powergate releases. It includes developer quickstart examples in its [repository](https://github.com/pygate/pygate-gRPC).
+
 # pygate-webapp
 A Filecoin [Flask](https://flask.palletsprojects.com/en/1.1.x/) reference application for Python developers using Textile.io's [Powergate](https://docs.textile.io/powergate/) and the [Pygate gRPC](https://github.com/pygate/pygate-gRPC) client.
 
